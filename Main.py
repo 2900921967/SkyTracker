@@ -29,7 +29,10 @@ class MainApp(QMainWindow):
         startup_message.setIcon(QMessageBox.Icon.Information)
         startup_message.setWindowTitle("欢迎使用")
         startup_message.setText(
-            "本程序基于心知天气API。\n\n请输入心知天气 API Key 并确认，解锁所有功能模块。\n\n提示：确保您有网络连接，API Key 可从心知天气官网获取。\n\n警告：本程序使用试用版API编写，如您使用的是免费版API并使用免费版API不支持的功能将会报错。"
+            "本程序基于心知天气API。\n\n"
+            "请输入心知天气 API Key 并确认，解锁所有功能模块。\n\n"
+            "提示：确保您有网络连接，API Key 可从心知天气官网获取。\n\n"
+            "警告：本程序使用试用版API编写，如您使用的是免费版API并使用免费版API不支持的功能将会报错。"
         )
         startup_message.setStandardButtons(QMessageBox.StandardButton.Ok)
         startup_message.exec()
@@ -138,7 +141,7 @@ class MainApp(QMainWindow):
             self.api_client.set_api_key(api_key)
 
             # 测试 API Key 是否有效
-            if self.api_client.test_api_key():  # 假设 ApiClient 有此方法
+            if self.api_client.test_api_key():
                 QMessageBox.information(self, "成功", "API Key 验证成功！")
                 for button in [
                     self.button_weather, self.button_air_quality, self.button_lifestyle,

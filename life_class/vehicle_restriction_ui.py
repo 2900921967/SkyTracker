@@ -31,7 +31,9 @@ class VehicleRestriction(QWidget):
             ("杭州", "WTMKQ069CCJ7"),
             ("贵阳", "WKEZD7MXE04F"),
             ("长春", "WZC1EXZ0P9HU"),
-            ("兰州", "WZC1EXZ0P9HU")
+            ("兰州", "WQ3V4QR6VR6G"),
+            ("南昌", "WT47HJP3HEMP"),
+            ("武汉", "WT3Q0FW9ZJ3Q")
         ]
 
         for city_name, location_id in cities:
