@@ -1,14 +1,19 @@
 import sys
+
+from PyQt6.QtCore import QSettings
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QMessageBox, QGroupBox
+    QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton,
+    QWidget, QMessageBox, QGroupBox
 )
-from utils.api_client import ApiClient
-from weather_class.weather_class_ui import WeatherClass
+
 from air_quality_class.air_quality_class_ui import AirQualityClass
-from life_class.life_class_ui import LifestyleClass
-from ocean_class.ocean_class_ui import OceanClass
 from geo_class.geo_class_ui import GeoClass
 from helper_class.helper_class_ui import HelperClass
+from life_class.life_class_ui import LifestyleClass
+from ocean_class.ocean_class_ui import OceanClass
+from utils.api_client import ApiClient
+from weather_class.weather_class_ui import WeatherClass
+
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -18,13 +23,15 @@ class MainApp(QMainWindow):
 
         self.api_client = ApiClient()
 
-        # 显示启动提示弹窗
-        self.show_startup_message()
+        self.settings = QSettings("SkyTracker", "SkyTrackerApp")
 
+        # 初始化 UI
         self.init_ui()
 
+        self.check_saved_api_key()
+        self.show_startup_message()
+
     def show_startup_message(self):
-        """显示启动提示弹窗"""
         startup_message = QMessageBox(self)
         startup_message.setIcon(QMessageBox.Icon.Information)
         startup_message.setWindowTitle("欢迎使用")
@@ -84,10 +91,13 @@ class MainApp(QMainWindow):
         self.button_helper.setEnabled(False)
         self.button_helper.clicked.connect(self.open_helper_class)
 
-        # 添加按钮到布局
         for button in [
-            self.button_weather, self.button_air_quality, self.button_lifestyle,
-            self.button_ocean, self.button_geo, self.button_helper
+            self.button_weather,
+            self.button_air_quality,
+            self.button_lifestyle,
+            self.button_ocean,
+            self.button_geo,
+            self.button_helper
         ]:
             button.setStyleSheet("font-size: 14px; padding: 10px;")
             function_layout.addWidget(button)
@@ -128,29 +138,61 @@ class MainApp(QMainWindow):
             }
         """)
 
+    def check_saved_api_key(self):
+        saved_key = self.settings.value("api_key", "")
+        if saved_key:
+            self.input_key.setText(saved_key)
+            self.verify_api_key(saved_key, show_message=False)
+
     def confirm_key(self):
-        """确认并验证 API Key"""
         api_key = self.input_key.text().strip()
         if not api_key:
             QMessageBox.warning(self, "警告", "API Key 不能为空！")
             return
 
+        self.verify_api_key(api_key)
+
+    def verify_api_key(self, api_key, show_message=True):
         try:
             # 设置 API Key
             self.api_client.set_api_key(api_key)
 
             # 测试 API Key 是否有效
             if self.api_client.test_api_key():
-                QMessageBox.information(self, "成功", "API Key 验证成功！")
+                if show_message:
+                    QMessageBox.information(self, "成功", "API Key 验证成功！")
+                    self.ask_save_key(api_key)
+
+                # 验证成功则启用所有按钮
                 for button in [
-                    self.button_weather, self.button_air_quality, self.button_lifestyle,
-                    self.button_ocean, self.button_geo, self.button_helper
+                    self.button_weather,
+                    self.button_air_quality,
+                    self.button_lifestyle,
+                    self.button_ocean,
+                    self.button_geo,
+                    self.button_helper
                 ]:
                     button.setEnabled(True)
             else:
-                QMessageBox.warning(self, "失败", "API Key 无效，请重新输入！")
+                if show_message:
+                    QMessageBox.warning(self, "失败", "API Key 无效，请重新输入！")
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"设置或验证 API Key 时出错: {e}")
+            if show_message:
+                QMessageBox.critical(self, "错误", f"设置或验证 API Key 时出错: {e}")
+
+    def ask_save_key(self, api_key):
+        # 提示用户是否保存 API Key，下次启动免输入
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle("保存 API Key")
+        msg_box.setText("是否要将当前验证成功的 API Key 保存？\n下次启动将自动使用，无需再次输入。")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        choice = msg_box.exec()
+
+        if choice == QMessageBox.StandardButton.Yes:
+            self.settings.setValue("api_key", api_key)
+        else:
+            self.settings.remove("api_key")
 
     def open_weather_class(self):
         self.weather_window = WeatherClass(self.api_client)
@@ -175,6 +217,7 @@ class MainApp(QMainWindow):
     def open_helper_class(self):
         self.helper_window = HelperClass(self.api_client)
         self.helper_window.show()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
