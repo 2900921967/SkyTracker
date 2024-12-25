@@ -9,7 +9,7 @@ class CurrentAirQuality(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("空气质量实况")
-        self.setFixedSize(400, 500)
+        self.setFixedSize(400, 300)
 
         self.init_ui()
 

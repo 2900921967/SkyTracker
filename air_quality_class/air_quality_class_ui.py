@@ -1,19 +1,21 @@
 import sys
+
 from PyQt6.QtWidgets import (
     QMainWindow, QVBoxLayout, QPushButton, QWidget, QGroupBox, QApplication
 )
-from air_quality_class.current_air_quality_ui import CurrentAirQuality
+
 from air_quality_class.air_quality_ranking_ui import AirQualityRanking
-from air_quality_class.air_quality_history_ui import HourlyAirQuality
+from air_quality_class.current_air_quality_ui import CurrentAirQuality
 from air_quality_class.daily_air_quality_ui import DailyAirQuality
 from air_quality_class.hourly_air_quality_ui import HourlyAirQualityForecast
+
 
 class AirQualityClass(QMainWindow):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("空气类功能")
-        self.setFixedSize(450, 500)
+        self.setFixedSize(450, 400)
 
         self.init_ui()
 
@@ -40,11 +42,6 @@ class AirQualityClass(QMainWindow):
         btn_city_air_ranking = QPushButton("空气质量实况城市排行")
         btn_city_air_ranking.clicked.connect(self.open_city_air_ranking)
         group_box_layout.addWidget(btn_city_air_ranking)
-
-        # 24小时历史空气质量按钮
-        btn_hourly_air_history = QPushButton("24小时历史空气质量")
-        btn_hourly_air_history.clicked.connect(self.open_hourly_air_history)
-        group_box_layout.addWidget(btn_hourly_air_history)
 
         # 逐日空气质量预报按钮
         btn_daily_air_forecast = QPushButton("逐日空气质量预报")
@@ -77,6 +74,11 @@ class AirQualityClass(QMainWindow):
                 border: 1px solid #d3d3d3;
                 border-radius: 5px;
             }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top center;
+                padding: 5px;
+            }
             QPushButton {
                 background-color: #4CAF50;
                 color: white;
@@ -103,11 +105,6 @@ class AirQualityClass(QMainWindow):
         if not self.city_air_ranking_window:
             self.city_air_ranking_window = AirQualityRanking(self.api_client)
         self.city_air_ranking_window.show()
-
-    def open_hourly_air_history(self):
-        if not self.hourly_air_history_window:
-            self.hourly_air_history_window = HourlyAirQuality(self.api_client)
-        self.hourly_air_history_window.show()
 
     def open_daily_air_forecast(self):
         if not self.daily_air_forecast_window:

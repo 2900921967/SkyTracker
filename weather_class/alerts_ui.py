@@ -10,7 +10,7 @@ class WeatherAlerts(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("气象灾害预警")
-        self.setFixedSize(400, 600)
+        self.setFixedSize(400, 300)
 
         self.data = []  # 保存气象灾害预警数据
         self.current_index = 0  # 当前显示的预警索引

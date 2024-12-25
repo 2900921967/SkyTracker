@@ -1,43 +1,39 @@
 import sys
+
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton, QMessageBox, QHBoxLayout
+    QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QLineEdit, QPushButton, QMessageBox
 )
-from PyQt6.QtCore import Qt
+
 
 class AirQualityRanking(QWidget):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("空气质量实况城市排行")
-        self.setFixedSize(400, 600)
+        self.setFixedSize(600, 500)  # 增加窗口宽度以适应新增列
 
         self.data = []  # 保存城市排名数据
-        self.current_index = 0  # 当前显示的城市排名索引
+        self.filtered_data = []  # 搜索过滤后的数据
 
         self.init_ui()
 
     def init_ui(self):
         layout = QVBoxLayout()
 
-        # 显示城市排名信息
-        self.ranking_info = QLabel("点击按钮获取空气质量排名")
-        self.ranking_info.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.ranking_info.setWordWrap(True)
-        layout.addWidget(self.ranking_info)
+        # 搜索框
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("请输入城市名称搜索...")
+        self.search_box.textChanged.connect(self.filter_table)
+        layout.addWidget(self.search_box)
 
-        # 切换排名按钮
-        nav_layout = QHBoxLayout()
-        self.prev_button = QPushButton("上一名")
-        self.prev_button.clicked.connect(self.show_previous_city)
-        self.prev_button.setEnabled(False)
-        nav_layout.addWidget(self.prev_button)
-
-        self.next_button = QPushButton("下一名")
-        self.next_button.clicked.connect(self.show_next_city)
-        self.next_button.setEnabled(False)
-        nav_layout.addWidget(self.next_button)
-
-        layout.addLayout(nav_layout)
+        # 表格：用于显示城市排名信息
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)  # 四列：排名、城市、位置、空气质量指数
+        self.table.setHorizontalHeaderLabels(["排名", "城市", "位置", "空气质量指数 (AQI)"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)  # 禁止编辑
+        self.table.verticalHeader().setVisible(False)  # 隐藏行号
+        layout.addWidget(self.table)
 
         # 获取排名按钮
         btn_fetch = QPushButton("获取空气质量排名")
@@ -50,57 +46,47 @@ class AirQualityRanking(QWidget):
         try:
             ranking_data = self.api_client.fetch_air_quality_ranking()
             self.data = ranking_data.get('results', [])
+            self.filtered_data = list(enumerate(self.data, start=1))  # 包含排名的初始数据
             if not self.data:
                 QMessageBox.warning(self, "提示", "暂无城市空气质量排名数据！")
-                self.ranking_info.setText("暂无城市空气质量排名数据！")
-                self.prev_button.setEnabled(False)
-                self.next_button.setEnabled(False)
+                self.table.setRowCount(0)  # 清空表格
                 return
 
-            self.current_index = 0
-            self.update_ranking_info()
-            self.prev_button.setEnabled(True)
-            self.next_button.setEnabled(True)
+            self.update_table()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"获取空气质量排名数据失败: {e}")
 
-    def update_ranking_info(self):
-        if not self.data:
-            return
+    def update_table(self):
+        # 更新表格显示
+        self.table.setRowCount(len(self.filtered_data))
+        for row, (rank, city_data) in enumerate(self.filtered_data):
+            location = city_data.get('location', {})
+            city_name = location.get('name', '暂无数据')
+            path = location.get('path', '暂无数据')
 
-        current_city = self.data[self.current_index]
-        location = current_city.get('location', {})
-        aqi = current_city.get('aqi', '暂无数据')
+            # 去掉重复的连续部分
+            path_parts = path.split(',')
+            processed_path = []
+            for i, part in enumerate(path_parts):
+                if i == 0 or part != path_parts[i - 1]:  # 只添加非重复部分
+                    processed_path.append(part)
+            processed_path = ', '.join(processed_path)
 
-        city_name = location.get('name', '暂无数据')
-        country = location.get('country', '暂无数据')
-        path = location.get('path', '暂无数据')
-        timezone = location.get('timezone', '暂无数据')
-        timezone_offset = location.get('timezone_offset', '暂无数据')
+            aqi = city_data.get('aqi', '暂无数据')
 
-        info = (
-            f"城市: {city_name}\n"
-            f"国家: {country}\n"
-            f"位置: {path}\n"
-            f"时区: {timezone} (UTC{timezone_offset})\n"
-            f"空气质量指数 (AQI): {aqi}"
-        )
+            self.table.setItem(row, 0, QTableWidgetItem(str(rank)))  # 显示排名
+            self.table.setItem(row, 1, QTableWidgetItem(city_name))
+            self.table.setItem(row, 2, QTableWidgetItem(processed_path))  # 显示处理后的路径
+            self.table.setItem(row, 3, QTableWidgetItem(str(aqi)))
 
-        self.ranking_info.setText(info)
-
-    def show_previous_city(self):
-        if self.current_index > 0:
-            self.current_index -= 1
-            self.update_ranking_info()
-        else:
-            QMessageBox.information(self, "提示", "已经是第一名的数据！")
-
-    def show_next_city(self):
-        if self.current_index < len(self.data) - 1:
-            self.current_index += 1
-            self.update_ranking_info()
-        else:
-            QMessageBox.information(self, "提示", "已经是最后一名的数据！")
+    def filter_table(self):
+        # 根据搜索框内容过滤数据，并保留排名信息
+        query = self.search_box.text().strip().lower()
+        self.filtered_data = [
+            (rank, city) for rank, city in enumerate(self.data, start=1)
+            if query in city.get('location', {}).get('name', '').lower()
+        ]
+        self.update_table()
 
 if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication

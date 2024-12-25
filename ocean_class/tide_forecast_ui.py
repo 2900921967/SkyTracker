@@ -1,15 +1,21 @@
 import sys
+
+import matplotlib
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+    QWidget, QVBoxLayout, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
 )
-from PyQt6.QtCore import Qt
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+matplotlib.rcParams['font.sans-serif'] = ['SimHei']
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 class HourlyTides(QWidget):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("逐小时潮汐预报")
-        self.setFixedSize(600, 800)
+        self.setFixedSize(800, 800)
 
         self.data = []
         self.current_day_index = 0
@@ -27,20 +33,22 @@ class HourlyTides(QWidget):
         self.fetch_button.clicked.connect(self.fetch_tides_data)
         layout.addWidget(self.fetch_button)
 
-        self.info_label = QLabel("逐小时潮汐预报")
-        self.info_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.info_label.setWordWrap(True)
-        layout.addWidget(self.info_label)
+        self.canvas = FigureCanvas(Figure(figsize=(8, 4)))
+        layout.addWidget(self.canvas)
+        self.ax = self.canvas.figure.add_subplot(111)
 
+        button_layout = QHBoxLayout()
         # 上一天按钮
         self.prev_button = QPushButton("上一天")
         self.prev_button.clicked.connect(self.show_previous_day)
-        layout.addWidget(self.prev_button)
+        button_layout.addWidget(self.prev_button)
 
         # 下一天按钮
         self.next_button = QPushButton("下一天")
         self.next_button.clicked.connect(self.show_next_day)
-        layout.addWidget(self.next_button)
+        button_layout.addWidget(self.next_button)
+
+        layout.addLayout(button_layout)
 
         self.setLayout(layout)
 
@@ -55,14 +63,12 @@ class HourlyTides(QWidget):
             data = self.api_client.fetch_tides_forecast(port)
             if not data:
                 QMessageBox.information(self, "提示", "当前暂无潮汐预报数据！")
-                self.info_label.setText("当前暂无潮汐预报数据！")
                 return
 
             # 解析数据
             self.data = data.get('data', [])
             if not self.data:
                 QMessageBox.information(self, "提示", "当前港口暂无潮汐数据！")
-                self.info_label.setText("当前港口暂无潮汐数据！")
                 return
 
             self.current_day_index = 0
@@ -75,22 +81,25 @@ class HourlyTides(QWidget):
             return
 
         day_data = self.data[self.current_day_index]
-        date = day_data.get('date', '暂无日期')
         tide_heights = day_data.get('tide', [])
-        ranges = day_data.get('range', [])
 
-        tide_info = f"日期: {date}\n\n逐小时潮汐高度:\n"
-        for hour, height in enumerate(tide_heights):
-            tide_info += f"{hour:02d}:00 - {height} cm\n"
+        # 转换潮汐高度为浮点数
+        try:
+            tide_heights = [float(height) for height in tide_heights]
+        except ValueError:
+            QMessageBox.critical(self, "错误", "潮汐高度数据格式有误，无法转换为数值！")
+            return
 
-        tide_info += "\n高低潮信息:\n"
-        for range_info in ranges:
-            time = range_info.get('time', '暂无时间')
-            height = range_info.get('height', '暂无高度')
-            type_ = range_info.get('type', '暂无类型')
-            tide_info += f"时间: {time}, 潮高: {height} cm, 类型: {type_}\n"
+        self.plot_tide_chart(tide_heights)
 
-        self.info_label.setText(tide_info)
+    def plot_tide_chart(self, tide_heights):
+        self.ax.clear()
+        self.ax.plot(range(len(tide_heights)), tide_heights, marker='o')
+        self.ax.set_title("逐小时潮汐高度")
+        self.ax.set_xlabel("时间 (小时)")
+        self.ax.set_ylabel("潮高 (cm)")
+        self.ax.grid(True)
+        self.canvas.draw()
 
     def show_previous_day(self):
         if self.current_day_index > 0:

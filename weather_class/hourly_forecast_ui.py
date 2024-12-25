@@ -1,18 +1,23 @@
 import sys
+
+import matplotlib
 from PyQt6.QtWidgets import (
-    QMainWindow, QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, QMessageBox, QHBoxLayout
+    QVBoxLayout, QPushButton, QLineEdit, QWidget, QMessageBox
 )
-from PyQt6.QtCore import Qt
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+matplotlib.rcParams['font.sans-serif'] = ['SimHei']
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 class HourlyForecast(QWidget):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("24小时逐小时天气预报")
-        self.setFixedSize(400, 600)
+        self.setFixedSize(800, 800)
 
         self.data = []  # 保存逐小时天气数据
-        self.current_index = 0  # 当前显示的小时索引
 
         self.init_ui()
 
@@ -29,29 +34,18 @@ class HourlyForecast(QWidget):
         self.input_hours.setPlaceholderText("请输入小时数，最多24小时")
         layout.addWidget(self.input_hours)
 
-        # 显示天气信息
-        self.weather_info = QLabel("点击按钮获取逐小时天气预报")
-        self.weather_info.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(self.weather_info)
-
-        # 切换小时按钮
-        nav_layout = QHBoxLayout()
-        self.prev_button = QPushButton("上一小时")
-        self.prev_button.clicked.connect(self.show_previous_hour)
-        self.prev_button.setEnabled(False)
-        nav_layout.addWidget(self.prev_button)
-
-        self.next_button = QPushButton("下一小时")
-        self.next_button.clicked.connect(self.show_next_hour)
-        self.next_button.setEnabled(False)
-        nav_layout.addWidget(self.next_button)
-
-        layout.addLayout(nav_layout)
-
         # 获取天气按钮
         btn_fetch = QPushButton("获取逐小时天气预报")
         btn_fetch.clicked.connect(self.fetch_hourly_forecast)
         layout.addWidget(btn_fetch)
+
+        # Matplotlib 图表区域
+        self.canvas = FigureCanvas(Figure(figsize=(10, 8)))
+        layout.addWidget(self.canvas)
+        self.ax_temperature = self.canvas.figure.add_subplot(311)
+        self.ax_humidity = self.canvas.figure.add_subplot(312)
+        self.ax_wind = self.canvas.figure.add_subplot(313)
+        self.canvas.figure.tight_layout(pad=5.0)
 
         self.setLayout(layout)
 
@@ -74,49 +68,52 @@ class HourlyForecast(QWidget):
                 QMessageBox.warning(self, "警告", "未获取到天气数据！")
                 return
 
-            self.current_index = 0
-            self.update_weather_info()
-            self.prev_button.setEnabled(True)
-            self.next_button.setEnabled(True)
+            self.plot_weather_data()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"获取天气数据失败: {e}")
 
-    def update_weather_info(self):
+    def plot_weather_data(self):
         if not self.data:
             return
 
-        current_hour = self.data[self.current_index]
-        time = current_hour.get('time', '暂无数据')
-        text = current_hour.get('text', '暂无数据')
-        temperature = current_hour.get('temperature', '暂无数据')
-        humidity = current_hour.get('humidity', '暂无数据')
-        wind_direction = current_hour.get('wind_direction', '暂无数据')
-        wind_speed = current_hour.get('wind_speed', '暂无数据')
+        # 修复小时提取问题
+        hours = [hour['time'].split('T')[-1].split(':')[0] for hour in self.data]  # 提取小时部分
+        temperatures = [float(hour['temperature']) for hour in self.data]
+        humidities = [float(hour['humidity']) for hour in self.data]
+        wind_speeds = [float(hour['wind_speed']) for hour in self.data]
+        wind_directions = [hour['wind_direction'] for hour in self.data]
+        weather_texts = [hour['text'] for hour in self.data]  # 获取天气描述
 
-        info = (
-            f"时间: {time}\n"
-            f"天气: {text}\n"
-            f"温度: {temperature}°C\n"
-            f"湿度: {humidity}%\n"
-            f"风向: {wind_direction}\n"
-            f"风速: {wind_speed} km/h"
-        )
+        self.ax_temperature.clear()
+        self.ax_humidity.clear()
+        self.ax_wind.clear()
 
-        self.weather_info.setText(info)
+        # 温度
+        self.ax_temperature.plot(hours, temperatures, marker='o', label="温度")
+        for i, text in enumerate(weather_texts):
+            self.ax_temperature.annotate(text, (hours[i], temperatures[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+        self.ax_temperature.set_title("温度")
+        self.ax_temperature.set_xlabel("时间 (小时)")
+        self.ax_temperature.set_ylabel("温度 (°C)")
+        self.ax_temperature.grid(True)
 
-    def show_previous_hour(self):
-        if self.current_index > 0:
-            self.current_index -= 1
-            self.update_weather_info()
-        else:
-            QMessageBox.information(self, "提示", "已经是最早的数据！")
+        # 湿度
+        self.ax_humidity.plot(hours, humidities, marker='o', label="湿度", color='blue')
+        self.ax_humidity.set_title("湿度")
+        self.ax_humidity.set_xlabel("时间 (小时)")
+        self.ax_humidity.set_ylabel("湿度 (%)")
+        self.ax_humidity.grid(True)
 
-    def show_next_hour(self):
-        if self.current_index < len(self.data) - 1:
-            self.current_index += 1
-            self.update_weather_info()
-        else:
-            QMessageBox.information(self, "提示", "已经是最晚的数据！")
+        # 风速
+        self.ax_wind.plot(hours, wind_speeds, marker='o', label="风速", color='orange')
+        for i, direction in enumerate(wind_directions):
+            self.ax_wind.annotate(direction, (hours[i], wind_speeds[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+        self.ax_wind.set_title("风速")
+        self.ax_wind.set_xlabel("时间 (小时)")
+        self.ax_wind.set_ylabel("风速 (km/h)")
+        self.ax_wind.grid(True)
+
+        self.canvas.draw()
 
 if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication

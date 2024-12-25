@@ -8,7 +8,7 @@ class CurrentWeather(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("天气实况")
-        self.setFixedSize(400, 500)
+        self.setFixedSize(400, 350)
 
         self.init_ui()
 

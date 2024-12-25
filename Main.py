@@ -13,8 +13,8 @@ from helper_class.helper_class_ui import HelperClass
 class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("天气查询系统")
-        self.setFixedSize(500, 600)
+        self.setWindowTitle("SkyTracker")
+        self.setFixedSize(500, 450)
 
         self.api_client = ApiClient()
 
@@ -29,10 +29,9 @@ class MainApp(QMainWindow):
         startup_message.setIcon(QMessageBox.Icon.Information)
         startup_message.setWindowTitle("欢迎使用")
         startup_message.setText(
-            "本程序基于心知天气API。\n\n"
+            "本程序数据源为心知天气，您需要拥有心知天气API Key才能使用本程序。\n\n"
             "请输入心知天气 API Key 并确认，解锁所有功能模块。\n\n"
-            "提示：确保您有网络连接，API Key 可从心知天气官网获取。\n\n"
-            "警告：本程序使用试用版API编写，如您使用的是免费版API并使用免费版API不支持的功能将会报错。"
+            "提示：本程序功能基于心知天气试用版API，请确保您拥有试用版或更高级版本的API访问权限并拥有网络连接用于验证。"
         )
         startup_message.setStandardButtons(QMessageBox.StandardButton.Ok)
         startup_message.exec()
