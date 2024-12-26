@@ -1,7 +1,10 @@
 import sys
+
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QMessageBox
+    QApplication, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QMessageBox
 )
+
 
 class CitySearch(QWidget):
     def __init__(self, api_client, parent=None):
@@ -78,17 +81,19 @@ class CitySearch(QWidget):
 
     def display_result(self):
         if not self.results:
+            self.label_info.setText("没有可显示的结果！")
             return
 
         result = self.results[self.current_index]
         info = (
-            f"城市ID: {result.get('id', '暂无数据')}\n"
-            f"城市名称: {result.get('name', '暂无数据')}\n"
-            f"国家: {result.get('country', '暂无数据')}\n"
-            f"路径: {result.get('path', '暂无数据')}\n"
-            f"时区: {result.get('timezone', '暂无数据')}\n"
-            f"时区偏移: {result.get('timezone_offset', '暂无数据')}"
+            f"<p><b>城市ID:</b> {result.get('id', '暂无数据')}</p>"
+            f"<p><b>城市名称:</b> {result.get('name', '暂无数据')}</p>"
+            f"<p><b>国家:</b> {result.get('country', '暂无数据')}</p>"
+            f"<p><b>路径:</b> {result.get('path', '暂无数据')}</p>"
+            f"<p><b>时区:</b> {result.get('timezone', '暂无数据')}</p>"
+            f"<p><b>时区偏移:</b> {result.get('timezone_offset', '暂无数据')}</p>"
         )
+        self.label_info.setTextFormat(Qt.TextFormat.RichText)
         self.label_info.setText(info)
 
     def show_previous(self):

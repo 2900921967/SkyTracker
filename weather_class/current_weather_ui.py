@@ -1,14 +1,15 @@
 import sys
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, QMessageBox
+from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, QMessageBox
+
 
 class CurrentWeather(QWidget):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("天气实况")
-        self.setFixedSize(400, 350)
+        self.setFixedSize(400, 600)
 
         self.init_ui()
 
@@ -68,24 +69,31 @@ class CurrentWeather(QWidget):
             last_update = result.get('last_update', '暂无数据')
 
             info = (
-                f"城市: {city}\n"
-                f"国家: {country}\n"
-                f"时区: {timezone}\n\n"
-                f"天气: {text}\n"
-                f"温度: {temperature}°C\n"
-                f"体感温度: {feels_like}°C\n"
-                f"气压: {pressure} mb\n"
-                f"相对湿度: {humidity}%\n"
-                f"能见度: {visibility} km\n"
-                f"风向: {wind_direction} ({wind_direction_degree}°)\n"
-                f"风速: {wind_speed} km/h\n"
-                f"风力等级: {wind_scale}\n"
-                f"云量: {clouds}%\n"
-                f"露点温度: {dew_point}°C\n\n"
-                f"数据更新时间: {last_update}"
+                f"<h2>城市: {city}</h2>"
+                f"<p><b>国家:</b> {country} <br>"
+                f"<b>时区:</b> {timezone}</p>"
+                f"<hr>"
+                f"<h3>天气详情:</h3>"
+                f"<p><b>天气:</b> {text} <br>"
+                f"<b>温度:</b> {temperature}°C <br>"
+                f"<b>体感温度:</b> {feels_like}°C <br>"
+                f"<b>气压:</b> {pressure} mb <br>"
+                f"<b>相对湿度:</b> {humidity}% <br>"
+                f"<b>能见度:</b> {visibility} km</p>"
+                f"<hr>"
+                f"<h3>风况:</h3>"
+                f"<p><b>风向:</b> {wind_direction} ({wind_direction_degree}°) <br>"
+                f"<b>风速:</b> {wind_speed} km/h <br>"
+                f"<b>风力等级:</b> {wind_scale}</p>"
+                f"<hr>"
+                f"<h3>其他信息:</h3>"
+                f"<p><b>云量:</b> {clouds}% <br>"
+                f"<b>露点温度:</b> {dew_point}°C <br>"
+                f"<b>数据更新时间:</b> {last_update}</p>"
             )
 
             self.label_info.setText(info)
+            self.label_info.setStyleSheet("QLabel { font-size: 14px; }")
         except KeyError:
             QMessageBox.critical(self, "错误", "解析天气数据失败！")
 

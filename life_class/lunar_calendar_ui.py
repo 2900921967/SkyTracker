@@ -9,7 +9,7 @@ class LunarCalendar(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("农历节气生肖")
-        self.setFixedSize(400, 600)
+        self.setFixedSize(400, 350)
 
         self.init_ui()
 
@@ -39,7 +39,7 @@ class LunarCalendar(QWidget):
                 return
 
             # 解析数据
-            calendar_data = data  # 返回值已直接是第一天的日历数据
+            calendar_data = data
             date = calendar_data.get('date', '暂无数据')
             zodiac = calendar_data.get('zodiac', '暂无数据')
             ganzhi_year = calendar_data.get('ganzhi_year', '暂无数据')
@@ -51,20 +51,20 @@ class LunarCalendar(QWidget):
             lunar_festival = calendar_data.get('lunar_festival', '暂无数据')
             solar_term = calendar_data.get('solar_term', '暂无数据')
 
-            # 格式化显示
             info = (
-                f"公历日期: {date}\n"
-                f"生肖属相: {zodiac}\n"
-                f"干支纪年: {ganzhi_year}\n"
-                f"干支纪月: {ganzhi_month}\n"
-                f"干支纪日: {ganzhi_day}\n"
-                f"农历年: {lunar_year}\n"
-                f"农历月: {lunar_month_name}\n"
-                f"农历日: {lunar_day_name}\n"
-                f"农历节日: {lunar_festival}\n"
-                f"二十四节气: {solar_term}"
+                f"<p><b>公历日期:</b> {date}</p>"
+                f"<p><b>生肖属相:</b> {zodiac}</p>"
+                f"<p><b>干支纪年:</b> {ganzhi_year}</p>"
+                f"<p><b>干支纪月:</b> {ganzhi_month}</p>"
+                f"<p><b>干支纪日:</b> {ganzhi_day}</p>"
+                f"<p><b>农历年:</b> {lunar_year}</p>"
+                f"<p><b>农历月:</b> {lunar_month_name}</p>"
+                f"<p><b>农历日:</b> {lunar_day_name}</p>"
+                f"<p><b>农历节日:</b> {lunar_festival}</p>"
+                f"<p><b>二十四节气:</b> {solar_term}</p>"
             )
 
+            self.info_label.setTextFormat(Qt.TextFormat.RichText)
             self.info_label.setText(info)
         except Exception as e:
             QMessageBox.critical(self, "错误", f"获取农历节气生肖数据失败: {e}")

@@ -201,11 +201,15 @@ class HourlyAirQualityForecast(QWidget):
         if self.current_chart > 0:
             self.current_chart -= 1
             self.update_chart()
+        else:
+            QMessageBox.information(self, "提示", "已经是第一张图表了！")
 
     def show_next_chart(self):
         if self.current_chart < len(self.chart_titles) - 1:
             self.current_chart += 1
             self.update_chart()
+        else:
+            QMessageBox.information(self, "提示", "已经是最后一张图表了！")
 
 if __name__ == "__main__":
     from utils.api_client import ApiClient

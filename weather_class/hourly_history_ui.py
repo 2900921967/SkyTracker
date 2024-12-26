@@ -26,7 +26,7 @@ class HourlyHistory(QWidget):
 
         # 输入框：城市名称
         self.input_city = QLineEdit()
-        self.input_city.setPlaceholderText("请输入城市名称，例如: 西雅图")
+        self.input_city.setPlaceholderText("请输入城市名称，例如: 北京")
         layout.addWidget(self.input_city)
 
         # 获取天气按钮

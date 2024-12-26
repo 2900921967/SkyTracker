@@ -1,16 +1,17 @@
 import sys
-from PyQt6.QtWidgets import (
-    QMainWindow, QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, QMessageBox, QHBoxLayout
-)
+
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import (
+    QVBoxLayout, QLabel, QPushButton, QLineEdit, QWidget, QMessageBox, QHBoxLayout
+)
+
 
 class WeatherAlerts(QWidget):
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("气象灾害预警")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(400, 400)
 
         self.data = []  # 保存气象灾害预警数据
         self.current_index = 0  # 当前显示的预警索引
@@ -90,11 +91,12 @@ class WeatherAlerts(QWidget):
         color = self.get_level_color(level)
 
         info = (
-            f"标题: {title}<br>"
-            f"类型: {type_}<br>"
-            f"级别: <span style='color:{color}'>{level}</span><br>"
-            f"描述: {description}<br>"
-            f"发布时间: {pub_date}"
+            f"<h2>预警标题: {title}</h2>"
+            f"<p><b>预警类型:</b> {type_}</p>"
+            f"<p><b>预警级别:</b> <span style='color:{color}'>{level}</span></p>"
+            f"<p><b>详细描述:</b></p>"
+            f"<p style='margin-left:20px;'>{description}</p>"
+            f"<p><b>发布时间:</b> {pub_date}</p>"
         )
 
         self.alert_info.setTextFormat(Qt.TextFormat.RichText)

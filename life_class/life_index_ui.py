@@ -9,7 +9,7 @@ class LifestyleIndex(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("生活指数")
-        self.setFixedSize(400, 600)
+        self.setFixedSize(400, 250)
 
         self.data = []  # 保存生活指数数据
         self.current_index = 0  # 当前显示的生活指数索引
@@ -87,11 +87,12 @@ class LifestyleIndex(QWidget):
         details = value.get('details', '暂无数据')
 
         info = (
-            f"指数名称: {key}\n"
-            f"简要建议: {brief}\n"
-            f"详细建议: {details}"
+            f"<p><b>指数名称:</b> {key}</p>"
+            f"<p><b>指数等级:</b> {brief}</p>"
+            f"<p><b>详细建议:</b> {details}</p>"
         )
 
+        self.life_index_info.setTextFormat(Qt.TextFormat.RichText)
         self.life_index_info.setText(info)
 
     def show_previous_index(self):

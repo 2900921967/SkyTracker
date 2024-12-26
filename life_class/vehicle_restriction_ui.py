@@ -9,7 +9,7 @@ class VehicleRestriction(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("机动车尾号限行查询")
-        self.setFixedSize(500, 700)
+        self.setFixedSize(500, 550)
 
         self.init_ui()
 
@@ -60,21 +60,27 @@ class VehicleRestriction(QWidget):
             remarks = restriction.get('remarks', '暂无数据')
             limits = restriction.get('limits', [])
 
+            # 格式化限行信息
             limit_info = ""
             for limit in limits:
                 date = limit.get('date', '暂无数据')
                 plates = ", ".join(limit.get('plates', []))
                 memo = limit.get('memo', '暂无数据')
-                limit_info += f"日期: {date}\n限行尾号: {plates}\n类型: {memo}\n\n"
+                limit_info += (
+                    f"<p><b>日期:</b> {date}<br>"
+                    f"<b>限行尾号:</b> {plates}<br>"
+                    f"<b>类型:</b> {memo}</p><hr>"
+                )
 
-            # 格式化显示
             info = (
-                f"处罚规定: {penalty}\n"
-                f"限行区域: {region}\n"
-                f"详细说明: {remarks}\n\n"
-                f"限行信息:\n{limit_info}"
+                f"<p><b>处罚规定:</b> {penalty}</p>"
+                f"<p><b>限行区域:</b> {region}</p>"
+                f"<p><b>详细说明:</b> {remarks}</p>"
+                f"<h3>限行详情:</h3>"
+                f"{limit_info}"
             )
 
+            self.info_label.setTextFormat(Qt.TextFormat.RichText)
             self.info_label.setText(info)
         except Exception as e:
             QMessageBox.critical(self, "错误", f"获取机动车尾号限行数据失败: {e}")

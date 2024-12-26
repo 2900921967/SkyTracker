@@ -9,7 +9,7 @@ class CurrentAirQuality(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("空气质量实况")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(400, 400)
 
         self.init_ui()
 
@@ -64,21 +64,20 @@ class CurrentAirQuality(QWidget):
         last_update = air.get('last_update', '暂无数据')
         quality = air.get('quality', '暂无数据')
 
-        # 根据空气质量等级设置颜色
         quality_color = self.get_quality_color(quality)
 
         info = (
-            f"城市: {city_name}<br>"
-            f"空气质量指数 (AQI): {aqi}<br>"
-            f"PM2.5: {pm25}<br>"
-            f"PM10: {pm10}<br>"
-            f"SO2: {so2}<br>"
-            f"NO2: {no2}<br>"
-            f"CO: {co}<br>"
-            f"O3: {o3}<br>"
-            f"主要污染物: {primary_pollutant}<br>"
-            f"空气质量: <span style='color:{quality_color}'>{quality}</span><br>"
-            f"最后更新时间: {last_update}"
+            f"<h2><b>城市:</b> {city_name}</h2>"
+            f"<p><b>空气质量指数 (AQI):</b> {aqi}</p>"
+            f"<p><b>PM2.5:</b> {pm25}</p>"
+            f"<p><b>PM10:</b> {pm10}</p>"
+            f"<p><b>SO<sub>2</sub>:</b> {so2}</p>"
+            f"<p><b>NO<sub>2</sub>:</b> {no2}</p>"
+            f"<p><b>CO:</b> {co}</p>"
+            f"<p><b>O<sub>3</sub>:</b> {o3}</p>"
+            f"<p><b>主要污染物:</b> {primary_pollutant}</p>"
+            f"<p><b>空气质量:</b> <span style='color:{quality_color}'>{quality}</span></p>"
+            f"<p><b>最后更新时间:</b> {last_update}</p>"
         )
 
         self.air_quality_info.setTextFormat(Qt.TextFormat.RichText)
