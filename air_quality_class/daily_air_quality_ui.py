@@ -101,7 +101,7 @@ class DailyAirQuality(QWidget):
         self.ax_co.clear()
         self.ax_o3.clear()
 
-        # 绘制 AQI 折线图并分段背景着色（替换原有 colorbar）
+        # 绘制 AQI 折线图并分段背景着色
         self.plot_aqi_with_background(formatted_dates, aqi)
 
         # 设置所有图表的 x 轴标签
@@ -129,11 +129,6 @@ class DailyAirQuality(QWidget):
         ax.grid(True)
 
     def plot_aqi_with_background(self, dates, aqi):
-        """
-        绘制 AQI 并为不同区间使用背景色:
-        0-50(优): 绿色、50-100(良): 黄色、100-150(轻度污染): 橙色、150-200(中度污染): 红色、
-        200-300(重度污染): 紫色、>300(严重污染): 棕色
-        """
         x_vals = range(len(dates))
 
         # 绘制折线图
@@ -148,7 +143,7 @@ class DailyAirQuality(QWidget):
 
         max_aqi = max(aqi) if aqi else 0
 
-        # 依据最大 AQI 设置 y 轴上限 (可根据需求微调)
+        # 依据最大 AQI 设置 y 轴上限
         if max_aqi <= 50:
             y_upper = 50
         elif max_aqi <= 100:
@@ -180,7 +175,7 @@ class DailyAirQuality(QWidget):
             else:
                 self.ax_aqi.axhspan(low, high, facecolor=colors[i], alpha=0.15)
 
-        # 如果 max_aqi > 300，需要再单独填充 300~y_upper 区间 (棕色)
+        # 如果 max_aqi > 300，需要再单独填充 300~y_upper 区间
         if max_aqi > 300:
             self.ax_aqi.axhspan(300, y_upper, facecolor="brown", alpha=0.15)
 
