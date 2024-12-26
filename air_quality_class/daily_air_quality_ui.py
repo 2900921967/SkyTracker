@@ -3,14 +3,12 @@ from collections import OrderedDict
 from datetime import datetime
 
 import matplotlib
-import numpy as np
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLineEdit, QMessageBox
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm
 from matplotlib.figure import Figure
+from matplotlib.patches import Patch
 
 matplotlib.rcParams['font.sans-serif'] = ['SimHei']
 matplotlib.rcParams['axes.unicode_minus'] = False
@@ -49,8 +47,8 @@ class DailyAirQuality(QWidget):
         self.ax_pm10 = self.canvas.figure.add_subplot(243)  # PM10
         self.ax_so2 = self.canvas.figure.add_subplot(244)  # SO2
         self.ax_no2 = self.canvas.figure.add_subplot(245)  # NO2
-        self.ax_co = self.canvas.figure.add_subplot(246)  # CO
-        self.ax_o3 = self.canvas.figure.add_subplot(247)  # O3
+        self.ax_co = self.canvas.figure.add_subplot(246)   # CO
+        self.ax_o3 = self.canvas.figure.add_subplot(247)   # O3
 
         self.canvas.figure.tight_layout(pad=5.0)  # 调整子图间距
 
@@ -103,8 +101,8 @@ class DailyAirQuality(QWidget):
         self.ax_co.clear()
         self.ax_o3.clear()
 
-        # 绘制 AQI 折线图并分段上色
-        self.plot_aqi_with_gradient(formatted_dates, aqi)
+        # 绘制 AQI 折线图并分段背景着色（替换原有 colorbar）
+        self.plot_aqi_with_background(formatted_dates, aqi)
 
         # 设置所有图表的 x 轴标签
         for ax in [self.ax_aqi, self.ax_pm25, self.ax_pm10, self.ax_so2, self.ax_no2, self.ax_co, self.ax_o3]:
@@ -130,40 +128,86 @@ class DailyAirQuality(QWidget):
         ax.set_ylabel(ylabel)
         ax.grid(True)
 
-    def plot_aqi_with_gradient(self, dates, aqi):
-        # 定义 AQI 分段颜色
-        cmap = ListedColormap(["green", "blue", "yellow", "orange", "red", "purple"])
-        bounds = [0, 50, 100, 150, 200, 300, 500]
-        norm = BoundaryNorm(bounds, cmap.N)
+    def plot_aqi_with_background(self, dates, aqi):
+        """
+        绘制 AQI 并为不同区间使用背景色:
+        0-50(优): 绿色、50-100(良): 黄色、100-150(轻度污染): 橙色、150-200(中度污染): 红色、
+        200-300(重度污染): 紫色、>300(严重污染): 棕色
+        """
+        x_vals = range(len(dates))
 
-        # 创建线段集合
-        points = np.array([range(len(dates)), aqi]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-
-        # 创建 LineCollection
-        lc = LineCollection(segments, cmap=cmap, norm=norm, linewidth=2)
-        lc.set_array(np.array(aqi))  # 设置颜色映射的值
-
-        # 添加到图表
-        self.ax_aqi.add_collection(lc)
-
-        # 绘制数据点
-        self.ax_aqi.scatter(range(len(dates)), aqi, c=aqi, cmap=cmap, norm=norm, edgecolor='black', zorder=5)
-
-        # 设置图表标题和标签
+        # 绘制折线图
+        self.ax_aqi.plot(x_vals, aqi, marker='o', label="AQI", color='blue')
         self.ax_aqi.set_title("空气质量指数 (AQI)")
         self.ax_aqi.set_xlabel("日期")
         self.ax_aqi.set_ylabel("AQI")
         self.ax_aqi.grid(True)
 
-        # 设置 x 轴标签
-        self.ax_aqi.set_xticks(range(len(dates)))
-        self.ax_aqi.set_xticklabels(dates, rotation=0)  # 日期水平显示
+        self.ax_aqi.set_xticks(x_vals)
+        self.ax_aqi.set_xticklabels(dates, rotation=0)
 
-        # 自动调整 y 轴范围
-        self.ax_aqi.set_ylim(min(aqi) - 10, max(aqi) + 10)
+        max_aqi = max(aqi) if aqi else 0
 
-        self.canvas.figure.colorbar(lc, ax=self.ax_aqi)
+        # 依据最大 AQI 设置 y 轴上限 (可根据需求微调)
+        if max_aqi <= 50:
+            y_upper = 50
+        elif max_aqi <= 100:
+            y_upper = 100
+        elif max_aqi <= 150:
+            y_upper = 150
+        elif max_aqi <= 200:
+            y_upper = 200
+        elif max_aqi <= 300:
+            y_upper = 300
+        else:
+            y_upper = max_aqi + 10
+
+        self.ax_aqi.set_ylim(0, y_upper)
+
+        # 定义分段区间和对应的颜色
+        intervals = [0, 50, 100, 150, 200, 300]
+        colors = ["green", "yellow", "orange", "red", "purple", "brown"]
+
+        # 依次填充背景颜色
+        for i in range(len(intervals) - 1):
+            low = intervals[i]
+            high = intervals[i+1]
+
+            if high > y_upper:
+                # 若超过 y_upper，则只填充到 y_upper 即可
+                self.ax_aqi.axhspan(low, y_upper, facecolor=colors[i], alpha=0.15)
+                break
+            else:
+                self.ax_aqi.axhspan(low, high, facecolor=colors[i], alpha=0.15)
+
+        # 如果 max_aqi > 300，需要再单独填充 300~y_upper 区间 (棕色)
+        if max_aqi > 300:
+            self.ax_aqi.axhspan(300, y_upper, facecolor="brown", alpha=0.15)
+
+        # 为不同区间创建图例
+        patches = [
+            Patch(facecolor="green",  alpha=0.15, label="0-50：优"),
+            Patch(facecolor="yellow", alpha=0.15, label="50-100：良"),
+            Patch(facecolor="orange", alpha=0.15, label="100-150：轻度污染"),
+            Patch(facecolor="red",    alpha=0.15, label="150-200：中度污染"),
+            Patch(facecolor="purple", alpha=0.15, label="200-300：重度污染"),
+            Patch(facecolor="brown",  alpha=0.15, label=">300：严重污染"),
+        ]
+
+        # 根据 max_aqi 决定要显示哪些档位
+        if max_aqi <= 50:
+            patches = patches[:1]
+        elif max_aqi <= 100:
+            patches = patches[:2]
+        elif max_aqi <= 150:
+            patches = patches[:3]
+        elif max_aqi <= 200:
+            patches = patches[:4]
+        elif max_aqi <= 300:
+            patches = patches[:5]
+        # 如果大于 300，就 6 档都显示
+
+        self.ax_aqi.legend(handles=patches, loc="lower left", title="污染等级", fancybox=True)
 
 if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication
