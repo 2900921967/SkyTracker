@@ -68,10 +68,7 @@ class HourlyHistory(QWidget):
                     seen_hours.add(hour)
                     unique_data.append(item)
 
-            # 排序并移除最后一个数据点
             self.data = sorted(unique_data, key=lambda x: x['last_update'])
-            if len(self.data) > 1:
-                self.data.pop()
 
             if not self.data:
                 QMessageBox.warning(self, "警告", "未获取到天气数据！")
@@ -87,7 +84,7 @@ class HourlyHistory(QWidget):
 
         # 提取数据
         hourly_data = sorted(self.data, key=lambda x: x['last_update'])  # 确保按时间顺序排序
-        times = [hour['last_update'].split('T')[-1][:2] for hour in hourly_data]  # 提取小时和分钟部分  # 提取小时部分
+        times = [hour['last_update'].split('T')[-1][:2] for hour in hourly_data]  # 提取小时部分
         temperatures = [float(hour['temperature']) for hour in hourly_data]
         feels_like = [float(hour['feels_like']) for hour in hourly_data]
         pressures = [float(hour['pressure']) for hour in hourly_data]
@@ -108,15 +105,28 @@ class HourlyHistory(QWidget):
         self.ax_clouds.clear()
         self.ax_dew_point.clear()
 
+        # 每隔 3 小时显示一次
+        xticks = range(0, len(times), 3)
+        xtick_labels = [times[i] for i in xticks]
+
         # 温度与天气
         self.ax_temperature.plot(times, temperatures, marker='o', label="温度")
         self.ax_temperature.plot(times, feels_like, marker='o', label="体感温度", color='orange')
         for i, text in enumerate(weather_texts):
-            self.ax_temperature.annotate(text, (times[i], temperatures[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+            if i % 2 == 0:  # 每隔两个小时标注一次
+                self.ax_temperature.annotate(
+                    text,
+                    (times[i], temperatures[i]),
+                    textcoords="offset points",
+                    xytext=(0, 10),
+                    ha='center'
+                )
         self.ax_temperature.set_title("温度与体感温度")
         self.ax_temperature.set_xlabel("时间 (小时)")
         self.ax_temperature.set_ylabel("温度 (°C)")
         self.ax_temperature.legend()
+        self.ax_temperature.set_xticks(xticks)
+        self.ax_temperature.set_xticklabels(xtick_labels)
         self.ax_temperature.grid(True)
 
         # 气压
@@ -124,6 +134,8 @@ class HourlyHistory(QWidget):
         self.ax_pressure.set_title("气压")
         self.ax_pressure.set_xlabel("时间 (小时)")
         self.ax_pressure.set_ylabel("气压 (mb)")
+        self.ax_pressure.set_xticks(xticks)
+        self.ax_pressure.set_xticklabels(xtick_labels)
         self.ax_pressure.grid(True)
 
         # 湿度
@@ -131,6 +143,8 @@ class HourlyHistory(QWidget):
         self.ax_humidity.set_title("湿度")
         self.ax_humidity.set_xlabel("时间 (小时)")
         self.ax_humidity.set_ylabel("湿度 (%)")
+        self.ax_humidity.set_xticks(xticks)
+        self.ax_humidity.set_xticklabels(xtick_labels)
         self.ax_humidity.grid(True)
 
         # 能见度
@@ -138,15 +152,26 @@ class HourlyHistory(QWidget):
         self.ax_visibility.set_title("能见度")
         self.ax_visibility.set_xlabel("时间 (小时)")
         self.ax_visibility.set_ylabel("能见度 (km)")
+        self.ax_visibility.set_xticks(xticks)
+        self.ax_visibility.set_xticklabels(xtick_labels)
         self.ax_visibility.grid(True)
 
         # 风速与风向
         self.ax_wind_speed.plot(times, wind_speeds, marker='o', label="风速", color='red')
         for i, direction in enumerate(wind_directions):
-            self.ax_wind_speed.annotate(direction, (times[i], wind_speeds[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+            if i % 2 == 0:  # 每隔两个小时标注一次
+                self.ax_wind_speed.annotate(
+                    direction,
+                    (times[i], wind_speeds[i]),
+                    textcoords="offset points",
+                    xytext=(0, 10),
+                    ha='center'
+                )
         self.ax_wind_speed.set_title("风速与风向")
         self.ax_wind_speed.set_xlabel("时间 (小时)")
         self.ax_wind_speed.set_ylabel("风速 (km/h)")
+        self.ax_wind_speed.set_xticks(xticks)
+        self.ax_wind_speed.set_xticklabels(xtick_labels)
         self.ax_wind_speed.grid(True)
 
         # 云量
@@ -154,6 +179,8 @@ class HourlyHistory(QWidget):
         self.ax_clouds.set_title("云量")
         self.ax_clouds.set_xlabel("时间 (小时)")
         self.ax_clouds.set_ylabel("云量 (%)")
+        self.ax_clouds.set_xticks(xticks)
+        self.ax_clouds.set_xticklabels(xtick_labels)
         self.ax_clouds.grid(True)
 
         # 露点温度
@@ -162,6 +189,8 @@ class HourlyHistory(QWidget):
             self.ax_dew_point.set_title("露点温度")
             self.ax_dew_point.set_xlabel("时间 (小时)")
             self.ax_dew_point.set_ylabel("露点温度 (°C)")
+            self.ax_dew_point.set_xticks(xticks)
+            self.ax_dew_point.set_xticklabels(xtick_labels)
             self.ax_dew_point.grid(True)
         else:
             self.ax_dew_point.text(0.5, 0.5, "暂无露点温度数据", transform=self.ax_dew_point.transAxes, ha='center', va='center', fontsize=12, color='red')
